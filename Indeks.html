@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulator Prinsip Le Chatelier</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f0f4f8;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            color: #333;
+        }
+
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 750px;
+            width: 95%;
+        }
+
+        h2 { margin: 0 0 10px 0; color: #2c3e50; }
+        
+        .equation {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            font-weight: bold;
+            background: #eef2f3;
+            padding: 15px;
+            border-radius: 10px;
+            display: inline-block;
+            border: 1px solid #dee2e6;
+        }
+
+        .sub { font-size: 0.7em; vertical-align: sub; }
+
+        canvas {
+            background-color: #fff;
+            border-radius: 8px;
+            border: 1px solid #ced4da;
+            touch-action: none;
+            margin-bottom: 15px;
+        }
+
+        .stats-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .stat-box {
+            padding: 10px 25px;
+            border-radius: 15px;
+            font-weight: bold;
+            font-size: 1.2em;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            min-width: 120px;
+        }
+
+        .controls {
+            margin-top: 10px;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 15px;
+        }
+
+        input[type=range] {
+            width: 100%;
+            margin: 15px 0;
+            cursor: pointer;
+            height: 8px;
+            background: #dfe6e9;
+            border-radius: 5px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 25px;
+            height: 25px;
+            background: #3498db;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        /* --- STYLING LEGENDA --- */
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 20px;
+            font-size: 0.9em;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+        .legend-item { display: flex; align-items: center; gap: 10px; }
+        
+        .mol-icon {
+            position: relative;
+            width: 40px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .atom { border-radius: 50%; position: absolute; }
+        .atom-n { background: #3498db; width: 12px; height: 12px; z-index: 2; border: 1px solid rgba(0,0,0,0.1); } 
+        .atom-o { background: #e74c3c; width: 10px; height: 10px; z-index: 1; border: 1px solid rgba(0,0,0,0.1); } 
+
+        /* Ikon NO2 */
+        .icon-no2 .atom-n { top: 8px; left: 14px; }
+        .icon-no2 .atom-o:nth-child(2) { top: 2px; left: 6px; }
+        .icon-no2 .atom-o:nth-child(3) { top: 2px; right: 6px; }
+
+        /* Ikon N2O4 */
+        .icon-n2o4 .atom-n:nth-child(1) { top: 9px; left: 8px; }
+        .icon-n2o4 .atom-n:nth-child(2) { top: 9px; right: 8px; }
+        .icon-n2o4 .atom-o:nth-child(3) { top: 2px; left: 4px; }
+        .icon-n2o4 .atom-o:nth-child(4) { bottom: 2px; left: 4px; }
+        .icon-n2o4 .atom-o:nth-child(5) { top: 2px; right: 4px; }
+        .icon-n2o4 .atom-o:nth-child(6) { bottom: 2px; right: 4px; }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Prinsip Le Chatelier</h2>
+        <div class="equation">
+            2NO<span class="sub">2</span> <span style="font-weight:normal; font-size:0.7em;">(Coklat)</span> 
+            &#8652; 
+            N<span class="sub">2</span>O<span class="sub">4</span> <span style="font-weight:normal; font-size:0.7em;">(Tak Berwarna)</span>
+        </div>
+
+        <div class="stats-container">
+            <div class="stat-box" style="background: #fadbd8; color: #c0392b; border: 1px solid #e6b0aa;">
+                <span style="font-size:0.8em; opacity:0.8">Jumlah NO<span class="sub">2</span></span>
+                <span id="countNO2">10</span>
+            </div>
+            <div class="stat-box" style="background: #d6eaf8; color: #2980b9; border: 1px solid #a9cce3;">
+                <span style="font-size:0.8em; opacity:0.8">Jumlah N<span class="sub">2</span>O<span class="sub">4</span></span>
+                <span id="countN2O4">0</span>
+            </div>
+        </div>
+
+        <canvas id="simCanvas" width="650" height="260"></canvas>
+        
+        <div class="controls">
+            <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:0.9em; color:#555;">
+                <span>Kiri: Tekanan TINGGI<br>(Membentuk N<sub>2</sub>O<sub>4</sub>)</span>
+                <span>Kanan: Tekanan RENDAH<br>(Membentuk NO<sub>2</sub>)</span>
+            </div>
+            
+            <input type="range" id="volumeSlider" min="150" max="500" value="500" step="1">
+            
+            <button onclick="init()" style="margin-top:10px; padding:8px 15px; border-radius:5px; border:1px solid #ccc; background:#fff; cursor:pointer;">Reset</button>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="mol-icon icon-no2">
+                    <span class="atom atom-n"></span>
+                    <span class="atom atom-o"></span>
+                    <span class="atom atom-o"></span>
+                </div>
+                <span>NO<span class="sub">2</span></span>
+            </div>
+            <div class="legend-item">
+                <div class="mol-icon icon-n2o4">
+                    <span class="atom atom-n"></span>
+                    <span class="atom atom-n"></span>
+                    <span class="atom atom-o"></span>
+                    <span class="atom atom-o"></span>
+                    <span class="atom atom-o"></span>
+                    <span class="atom atom-o"></span>
+                </div>
+                <span>N<span class="sub">2</span>O<span class="sub">4</span></span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+        const slider = document.getElementById('volumeSlider');
+        const countNO2Display = document.getElementById('countNO2');
+        const countN2O4Display = document.getElementById('countN2O4');
+
+        let particles = [];
+        let pistonX = parseInt(slider.value);
+        const padding = 20;
+
+        const colorN = '#3498db'; 
+        const colorO = '#e74c3c'; 
+        const bondColor = '#bdc3c7'; 
+
+        class Molecule {
+            constructor(type, x, y) {
+                this.type = type; 
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 1.5; 
+                this.vy = (Math.random() - 0.5) * 1.5;
+                this.radius = type === 'NO2' ? 16 : 24; 
+                this.angle = Math.random() * Math.PI * 2;
+                this.rotSpeed = (Math.random() - 0.5) * 0.03;
+            }
+
+            move() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.angle += this.rotSpeed;
+
+                if (this.x - this.radius < padding + 30) { 
+                    this.x = padding + 30 + this.radius; 
+                    this.vx *= -1; 
+                }
+                if (this.x + this.radius > pistonX) { 
+                    this.x = pistonX - this.radius; 
+                    this.vx *= -1; 
+                    this.x -= 2; 
+                }
+                if (this.y - this.radius < padding + 5) { 
+                    this.y = padding + 5 + this.radius; 
+                    this.vy *= -1; 
+                }
+                if (this.y + this.radius > canvas.height - padding - 5) { 
+                    this.y = canvas.height - padding - 5 - this.radius; 
+                    this.vy *= -1; 
+                }
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.angle);
+
+                if (this.type === 'NO2') {
+                    const rN = 7; const rO = 6;
+                    ctx.strokeStyle = bondColor; ctx.lineWidth = 3;
+                    ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(-9, 8); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(9, 8); ctx.stroke();
+                    ctx.fillStyle = colorO;
+                    ctx.beginPath(); ctx.arc(-9, 8, rO, 0, Math.PI*2); ctx.fill();
+                    ctx.beginPath(); ctx.arc(9, 8, rO, 0, Math.PI*2); ctx.fill();
+                    ctx.fillStyle = colorN;
+                    ctx.beginPath(); ctx.arc(0, 0, rN, 0, Math.PI*2); ctx.fill();
+                } else {
+                    const rN = 7; const rO = 6;
+                    ctx.strokeStyle = bondColor; ctx.lineWidth = 4;
+                    ctx.beginPath(); ctx.moveTo(-6,0); ctx.lineTo(6, 0); ctx.stroke();
+                    ctx.lineWidth = 2;
+                    ctx.beginPath(); ctx.moveTo(-6,0); ctx.lineTo(-12, -9); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(-6,0); ctx.lineTo(-12, 9); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(6,0); ctx.lineTo(12, -9); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(6,0); ctx.lineTo(12, 9); ctx.stroke();
+                    ctx.fillStyle = colorO;
+                    ctx.beginPath(); ctx.arc(-12, -9, rO, 0, Math.PI*2); ctx.fill();
+                    ctx.beginPath(); ctx.arc(-12, 9, rO, 0, Math.PI*2); ctx.fill();
+                    ctx.beginPath(); ctx.arc(12, -9, rO, 0, Math.PI*2); ctx.fill();
+                    ctx.beginPath(); ctx.arc(12, 9, rO, 0, Math.PI*2); ctx.fill();
+                    ctx.fillStyle = colorN;
+                    ctx.beginPath(); ctx.arc(-6, 0, rN, 0, Math.PI*2); ctx.fill();
+                    ctx.beginPath(); ctx.arc(6, 0, rN, 0, Math.PI*2); ctx.fill();
+                }
+                ctx.restore();
+            }
+        }
+
+        function init() {
+            particles = [];
+            slider.value = 500; 
+            pistonX = 500;
+            
+            for(let i=0; i<10; i++) spawnNoOverlap('NO2');
+            updateDisplay();
+        }
+
+        function spawnNoOverlap(type) {
+            let maxAttempts = 100;
+            let attempt = 0;
+            let overlap;
+            let newP;
+            do {
+                overlap = false;
+                let safeX = Math.random() * (pistonX - 100) + 60;
+                let safeY = Math.random() * (canvas.height - 80) + 40;
+                newP = new Molecule(type, safeX, safeY);
+                for (let other of particles) {
+                    if (Math.hypot(newP.x - other.x, newP.y - other.y) < 45) {
+                        overlap = true; break;
+                    }
+                }
+                attempt++;
+            } while (overlap && attempt < maxAttempts);
+            particles.push(newP);
+        }
+
+        function updateReaction() {
+            pistonX = parseInt(slider.value);
+            let sliderPercent = (pistonX - 150) / 350; 
+            let targetN2O4 = (1.0 - sliderPercent) * 5; 
+            
+            const countN2O4 = particles.filter(p => p.type === 'N2O4').length;
+            const countNO2 = particles.filter(p => p.type === 'NO2').length;
+
+            if (countN2O4 < targetN2O4 - 0.5 && countNO2 >= 2) {
+                for (let i = 0; i < particles.length; i++) {
+                    if (particles[i].type !== 'NO2') continue;
+                    for (let j = i + 1; j < particles.length; j++) {
+                        if (particles[j].type !== 'NO2') continue;
+                        
+                        let dist = Math.hypot(particles[i].x - particles[j].x, particles[i].y - particles[j].y);
+                        if (dist < 50) { 
+                            let midX = (particles[i].x + particles[j].x) / 2;
+                            let midY = (particles[i].y + particles[j].y) / 2;
+                            particles.splice(j, 1);
+                            particles.splice(i, 1);
+                            particles.push(new Molecule('N2O4', midX, midY));
+                            return; 
+                        }
+                    }
+                }
+            }
+            else if (countN2O4 > targetN2O4 + 0.5) {
+                if (Math.random() < 0.05) { 
+                    let n2o4Indexes = particles.map((p, i) => i).filter(i => particles[i].type === 'N2O4');
+                    let targetIndex = n2o4Indexes[Math.floor(Math.random() * n2o4Indexes.length)];
+                    let p = particles[targetIndex];
+                    
+                    particles.splice(targetIndex, 1);
+                    
+                    let m1 = new Molecule('NO2', p.x - 10, p.y);
+                    let m2 = new Molecule('NO2', p.x + 10, p.y);
+                    m1.vx = -1.5; m2.vx = 1.5; 
+                    particles.push(m1);
+                    particles.push(m2);
+                }
+            }
+        }
+
+        function updateDisplay() {
+            countNO2Display.innerText = particles.filter(p => p.type === 'NO2').length;
+            countN2O4Display.innerText = particles.filter(p => p.type === 'N2O4').length;
+        }
+
+        function drawSyringe() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const h = canvas.height - (padding * 2);
+
+            ctx.fillStyle = '#ebf5fb';
+            ctx.fillRect(padding + 30, padding, pistonX - (padding + 30), h);
+
+            ctx.strokeStyle = '#2980b9';
+            ctx.lineWidth = 8;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.beginPath();
+            ctx.moveTo(padding + 30, padding); ctx.lineTo(canvas.width - padding, padding);
+            ctx.moveTo(padding + 30, canvas.height - padding); ctx.lineTo(canvas.width - padding, canvas.height - padding);
+            ctx.moveTo(padding + 30, padding); ctx.lineTo(padding + 30, padding + 40);
+            ctx.lineTo(padding, padding + 40); ctx.lineTo(padding, canvas.height - padding - 40);
+            ctx.lineTo(padding + 30, canvas.height - padding - 40); ctx.lineTo(padding + 30, canvas.height - padding);
+            ctx.stroke();
+
+            ctx.fillStyle = '#a9cce3';
+            ctx.fillRect(pistonX + 12, padding + 10, canvas.width - pistonX, h - 20);
+            ctx.fillStyle = '#5499c7'; 
+            ctx.fillRect(pistonX, padding + 6, 12, h - 12);
+        }
+
+        function animate() {
+            drawSyringe();
+            updateReaction();
+            updateDisplay();
+            particles.forEach(p => { p.move(); p.draw(); });
+            requestAnimationFrame(animate);
+        }
+
+        init();
+        animate();
+    </script>
+</body>
+</html>
